@@ -1,0 +1,75 @@
+#!/usr/bin/python
+#!coding:utf-8
+"""
+Author:yubingjie
+Date:2016-10-28 18:21
+Version:1.0-Alpha
+PythonVersion:2.7.10
+IDE:PyCharm(ComunityEdition)
+"""
+import string
+import re
+import urllib2
+
+class DoubanSpiderTop250(object):
+    def __init__(self):
+        self.page_num = 1
+        self.url_trying = "http://movie.douban.com/top250?start={page}&filter=&type="
+        self.datas = []
+        self._top_num = 1
+
+        print "Prepare Succeed!Ready to Start..."
+
+
+    def get_page(self,page_num):
+        url = self.url_trying
+        try:
+            my_page = urllib2.urlopen(url.format(page = (page_num-1)*25)).read().decode("utf-8")
+        except urllib2.URLError,e:
+            if hasattr(e,"code"):
+                print "Sth Wrong with Server!"
+                print "Error code:s%" %e.code
+            elif hasattr(e,"reason"):
+                print "Failed to reach the server!"
+                print "Here is the reason:%s" %e.reason
+
+        return my_page
+
+
+    def find_title(self,my_page):
+        temp_data = []
+        movie_items = re.findall(r'<span.*?class="title">(.*?)</span>', my_page, re.S)
+        for index,item in enumerate(movie_items):
+            if item.find("&nbsp")==-1:
+                temp_data.append("Top"+str(self._top_num)+" "+item)
+                self._top_num +=1
+        self.datas.extend(temp_data)
+
+    def spider(self):
+        while self.page_num<=4:
+            my_page = self.get_page(self.page_num)
+            self.find_title(my_page)
+            self.page_num +=1
+
+
+def main():
+    print "######################"
+    print "SimpleSpiderTop250"
+    print "Version:1.0-Alpha"
+    print "Author:yubingjie "
+    print "######################"
+
+    spider_top250 = DoubanSpiderTop250()
+    spider_top250.spider()
+
+    num = 1
+    for item in spider_top250.datas:
+        if num<=10:
+            num +=1
+            print item
+        elif num>10:
+            print "Over!"
+            break
+
+if __name__=='__main__':
+    main()
