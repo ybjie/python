@@ -1,0 +1,82 @@
+#!/usr/bin/python
+#!coding:utf-8
+"""
+Date:2016-10-28 18:21
+Version:1.0-Alpha
+PythonVersion:2.7.10
+IDE:PyCharm(ComunityEdition)
+ProblemUnsolved:电视剧这么页面不是直接返回的,有个二次请求的接口,目前的水平爬不了这个页面
+"""
+import string
+import re
+import urllib2
+
+class DoubanTvSpider(object):
+    def __init__(self):
+        #当前爬取的url
+        self.cur_url = "http://movie.douban.com/j/search_subjects?type=tv&tag={tag}&sort=time&page_limit={page_limit}&page_start={page_start}"
+        #self.cur_url = "http://movie.douban.com/tv/#!type=tv&tag={tag}&sort=time&page_limit={page_limit}&page_start={page_start}"
+        #电视剧下的几个tag分类,请求是做了urldecode
+        self.tag_list = {"热门":"%E7%83%AD%E9%97%A","美剧":"%E7%BE%8E%E5%89%A7","英剧":"%E8%8B%B1%E5%89%A7",
+                    "韩剧":"%E9%9F%A9%E5%89%A7","日剧":"%E6%97%A5%E5%89%A7","大陆":"%E5%9B%BD%E4%BA%A7%E5%89%A7",
+                    "港剧":"%E6%B8%AF%E5%89%A7","日漫":"%E6%97%A5%E6%9C%AC%E5%8A%A8%E7%94%BB","综艺":"%E7%BB%BC%E8%89%BA"
+                    }
+        #当前请求的页码
+        self.page = 1
+        #用于终端程序,标记当前爬取数据
+        self.data = []
+
+        print "DoubanTvSpider ready to start..."
+
+
+    #get_page获取当前要爬去的页面
+    def get_cur_page(self,tag,page_start,page_limit=20):
+        now_url = self.cur_url
+        #urllib2,捕获了若干异常
+        try:
+            my_page = urllib2.urlopen(now_url.format(now_url,tag=tag,page_start=page_start,page_limit=page_limit)).read().decode("utf-8")
+        except urllib2.URLError,e:
+            if hasattr(e,"code"):
+                print "Server respond with code %s" %e.code
+            elif hasattr(e,"reason"):
+                print "Server Wrong! Reason:%s Check your code!" %e.reason
+        #print my_page
+        #exit()
+        return my_page
+
+
+    #对页面进行处理,获取我们需要的信息
+    def find_title(self,page):
+        temp_data = []
+        movie_items = re.findall(r'(<p.*?>)(<span.*?class="green">.*?</span>)*<strong>', page, re.S)
+        #print movie_items
+        #exit()
+        for index, item in enumerate(movie_items):
+            temp_data.extend(item)
+        self.data.append(temp_data)
+
+
+    #进行爬取处理的函数
+    def spider(self):
+        for tag,encode in self.tag_list.iteritems()  :
+            cur_page = self.get_cur_page(encode,0,20)
+            self.find_title(cur_page)
+
+#主函数
+def main():
+    print "######################"
+    print "DoubanTvSpider"
+    print "Version:1.0-Alpha"
+    print "date:2016.10.29"
+    print "######################"
+
+    tv_spider = DoubanTvSpider()
+    tv_spider.spider()
+
+    for item in tv_spider.data:
+        print item
+
+    print "Over!"
+
+if __name__=="__main__":
+    main()
